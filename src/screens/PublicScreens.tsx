@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Screen } from "../App";
-import { CategoryIcon, TrophyIcon, SmartphoneIcon, CreditCardIcon, LockIcon, MailIcon, GlobeIcon } from "../icons";
+import { CategoryIcon, TrophyIcon, SmartphoneIcon, CreditCardIcon, LockIcon, MailIcon, GlobeIcon, PhoneIcon, HelpCircleIcon, CheckCircleIcon, CheckIcon } from "../icons";
 
 interface Props {
   screen: Screen;
   go: (s: Screen) => void;
   setSelectedModuleId: (id: string) => void;
+  setIsAuthenticated: (v: boolean) => void;
 }
 
 const LINE_BLACK = "rgba(184,151,90,0.35)";
@@ -222,13 +223,19 @@ function HomeScreen({
 
 /* ─── REGISTER ──────────────────────────────────────────────── */
 function RegisterScreen({ go }: { go: (s: Screen) => void }) {
-  const [method, setMethod] = useState<"phone" | "email">("phone");
-  const [value, setValue] = useState("");
-  const [password, setPassword] = useState("");
-  const [consent, setConsent] = useState(false);
+  const [mobile, setMobile] = useState("+221 77 ");
+  const [consent, setConsent] = useState(true);
   const [error, setError] = useState("");
 
   function handleSubmit() {
+    if (!mobile || mobile.trim().length < 8) {
+      setError("Veuillez saisir un numéro de mobile valide.");
+      return;
+    }
+    if (!consent) {
+      setError("Veuillez accepter les conditions d'utilisation.");
+      return;
+    }
     setError("");
     go("otp");
   }
@@ -259,55 +266,37 @@ function RegisterScreen({ go }: { go: (s: Screen) => void }) {
           Votre parcours patrimonial commence ici
         </p>
 
-        {/* Toggle */}
+        {/* Mobile Info Box */}
         <div
-          className="flex p-1 mb-5"
-          style={{ background: "#EEE5D2", border: "1px solid rgba(138,109,58,0.28)", borderRadius: "2px" }}
+          className="p-3.5 mb-5 flex items-start gap-3"
+          style={{ background: "#EEE5D2", border: "1px solid rgba(138,109,58,0.25)", borderRadius: "2px" }}
         >
-          {(["phone", "email"] as const).map((m) => (
-            <button
-              key={m}
-              className="flex-1 py-2 text-sm font-sans font-medium transition-all"
-              style={{
-                borderRadius: "1px",
-                background: method === m ? "#F6F1E7" : "transparent",
-                color: method === m ? "#211C13" : "#6E6353",
-                boxShadow: method === m ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-              }}
-              onClick={() => setMethod(m)}
-            >
-              {m === "phone" ? "Téléphone" : "Email"}
-            </button>
-          ))}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-xs font-sans font-medium text-ink mb-1.5">
-            {method === "phone" ? "Numéro de téléphone" : "Adresse email"}
-          </label>
-          <input
-            type={method === "phone" ? "tel" : "email"}
-            placeholder={method === "phone" ? "+221 77 000 00 00" : "vous@exemple.com"}
-            value={value}
-            onChange={(e) => { setValue(e.target.value); setError(""); }}
-            className="w-full px-4 py-3 text-sm font-sans text-ink bg-white"
-            style={inputStyle(!!error && !value)}
-          />
+          <span className="shrink-0 mt-0.5"><PhoneIcon size={18} color="#8A6D3A" /></span>
+          <p className="font-sans text-xs text-muted-cream leading-relaxed">
+            <strong className="text-ink font-medium">Authentification 100% sans mot de passe :</strong> inscription sécurisée par simple validation d&apos;un code SMS (OTP).
+          </p>
         </div>
 
         <div className="mb-5">
-          <label className="block text-xs font-sans font-medium text-ink mb-1.5">Mot de passe</label>
-          <input
-            type="password"
-            placeholder="Au moins 8 caractères"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 text-sm font-sans text-ink bg-white"
-            style={inputStyle(!!error && !password)}
-          />
+          <label className="block text-xs font-sans font-medium text-ink mb-1.5">
+            Numéro de téléphone mobile
+          </label>
+          <div className="relative">
+            <input
+              type="tel"
+              placeholder="+221 77 000 00 00"
+              value={mobile}
+              onChange={(e) => { setMobile(e.target.value); setError(""); }}
+              className="w-full px-4 py-3 text-sm font-sans text-ink bg-white tracking-wide"
+              style={inputStyle(!!error && (!mobile || mobile.length < 8))}
+            />
+          </div>
+          <p className="text-[11px] font-sans text-muted-cream mt-1.5">
+            Format international (ex. Sénégal +221, Côte d&apos;Ivoire +225, Cameroun +237, France +33)
+          </p>
         </div>
 
-        <label className="flex items-start gap-3 mb-5 cursor-pointer">
+        <label className="flex items-start gap-3 mb-6 cursor-pointer">
           <input
             type="checkbox"
             checked={consent}
@@ -330,13 +319,13 @@ function RegisterScreen({ go }: { go: (s: Screen) => void }) {
           style={{ background: GOLD_GRAD, borderRadius: "2px" }}
           onClick={handleSubmit}
         >
-          Créer mon compte
+          Recevoir mon code par SMS
         </button>
 
         <p className="text-center text-xs font-sans text-muted-cream">
           Déjà inscrit ?{" "}
-          <button className="text-gold underline" onClick={() => go("login")}>
-            Se connecter
+          <button className="text-gold underline font-medium" onClick={() => go("login")}>
+            Se connecter par SMS
           </button>
         </p>
       </div>
@@ -348,7 +337,7 @@ function RegisterScreen({ go }: { go: (s: Screen) => void }) {
       >
         <p className="text-xs font-sans text-muted-black text-center leading-relaxed flex items-center justify-center gap-2">
           <LockIcon size={13} color="#B7AB92" />
-          Données sécurisées, hébergées en Europe. Aucun partage tiers sans consentement.
+          Données protégées et confidentielles. Aucun mot de passe requis ni stocké.
         </p>
       </div>
     </div>
@@ -356,10 +345,24 @@ function RegisterScreen({ go }: { go: (s: Screen) => void }) {
 }
 
 /* ─── OTP ───────────────────────────────────────────────────── */
-function OtpScreen({ go }: { go: (s: Screen) => void }) {
-  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
-  const [timer] = useState(30);
+function OtpScreen({
+  go,
+  setIsAuthenticated,
+}: {
+  go: (s: Screen) => void;
+  setIsAuthenticated: (v: boolean) => void;
+}) {
+  // Backend scaffold generates a 4-digit numeric code: Math.floor(1000 + Math.random() * 9000)
+  const [digits, setDigits] = useState(["", "", "", ""]);
+  const [timer, setTimer] = useState(30);
   const [error, setError] = useState("");
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (timer <= 0) return;
+    const interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [timer]);
 
   function handleDigit(i: number, val: string) {
     if (!/^\d?$/.test(val)) return;
@@ -370,8 +373,20 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
   }
 
   function handleValidate() {
+    const code = digits.join("");
+    if (code.length < 4) {
+      setError("Veuillez saisir le code complet à 4 chiffres.");
+      return;
+    }
     setError("");
+    setIsAuthenticated(true);
     go("dashboard");
+  }
+
+  function handleResend() {
+    setResending(true);
+    setTimer(30);
+    setTimeout(() => setResending(false), 1200);
   }
 
   return (
@@ -382,7 +397,7 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
       >
         <button className="mr-4 text-ink text-xl" onClick={() => go("register")}>←</button>
         <span className="font-serif text-ink text-xl font-bold" style={{ fontFamily: "Playfair Display, serif" }}>
-          Vérification
+          Vérification OTP
         </span>
       </div>
 
@@ -391,15 +406,15 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
           className="italic text-gold text-base mb-2"
           style={{ fontFamily: "Cormorant Garamond, serif" }}
         >
-          Code envoyé par SMS
+          Code temporaire envoyé par SMS
         </p>
         <p className="font-sans text-sm text-muted-cream mb-8">
-          Saisissez le code à 6 chiffres envoyé au<br />
+          Saisissez le code à 4 chiffres envoyé au<br />
           <strong className="text-ink">+221 77 *** ** 42</strong>
         </p>
 
-        {/* OTP fields */}
-        <div className="flex justify-center gap-2.5 mb-4">
+        {/* OTP fields (4 digits aligned with backend scaffold) */}
+        <div className="flex justify-center gap-3 mb-4">
           {digits.map((d, i) => (
             <input
               key={i}
@@ -407,10 +422,10 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
               maxLength={1}
               value={d}
               onChange={(e) => handleDigit(i, e.target.value)}
-              className="text-center text-xl font-bold text-ink bg-white"
+              className="text-center text-2xl font-bold text-ink bg-white"
               style={{
-                width: "44px",
-                height: "56px",
+                width: "52px",
+                height: "60px",
                 border: `2px solid ${error ? "#c0392b" : "rgba(138,109,58,0.35)"}`,
                 borderRadius: "2px",
                 outline: "none",
@@ -422,12 +437,22 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
 
         {error && <p className="text-xs text-red-600 mb-3 font-sans">{error}</p>}
 
-        <p className="text-xs font-sans text-muted-cream mb-2">
-          Renvoyer le code dans{" "}
-          <strong>00:{String(timer).padStart(2, "0")}</strong>
-        </p>
+        {timer > 0 ? (
+          <p className="text-xs font-sans text-muted-cream mb-2">
+            Renvoyer un nouveau code dans{" "}
+            <strong className="text-ink">00:{String(timer).padStart(2, "0")}</strong>
+          </p>
+        ) : (
+          <button
+            className="text-xs font-sans text-gold underline mb-2"
+            onClick={handleResend}
+          >
+            {resending ? "Envoi du SMS en cours…" : "Renvoyer un code par SMS"}
+          </button>
+        )}
+
         <p className="text-xs text-muted-cream italic font-sans mb-8">
-          Pour la démo, saisir : 1 2 3 4 5 6
+          Pour la démo, saisir : 1 2 3 4
         </p>
 
         <button
@@ -435,7 +460,14 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
           style={{ background: GOLD_GRAD, borderRadius: "2px" }}
           onClick={handleValidate}
         >
-          Valider
+          Valider et accéder
+        </button>
+
+        <button
+          className="mt-4 text-xs font-sans text-muted-cream underline"
+          onClick={() => go("forgot-password")}
+        >
+          Difficultés à recevoir le code ?
         </button>
       </div>
     </div>
@@ -444,8 +476,18 @@ function OtpScreen({ go }: { go: (s: Screen) => void }) {
 
 /* ─── LOGIN ─────────────────────────────────────────────────── */
 function LoginScreen({ go }: { go: (s: Screen) => void }) {
-  const [id, setId] = useState("");
-  const [pwd, setPwd] = useState("");
+  const [mobile, setMobile] = useState("+221 77 ");
+  const [error, setError] = useState("");
+
+  function handleLogin() {
+    if (!mobile || mobile.trim().length < 8) {
+      setError("Veuillez saisir votre numéro de mobile.");
+      return;
+    }
+    setError("");
+    // Conformément au backend scaffold (POST /auth/login qui renvoie un code OTP par SMS)
+    go("otp");
+  }
 
   const inputStyle = {
     border: "1.5px solid rgba(138,109,58,0.28)",
@@ -467,145 +509,88 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
 
       <div className="flex-1 px-5 pt-8">
         <p
-          className="italic text-gold text-sm mb-8"
+          className="italic text-gold text-sm mb-6"
           style={{ fontFamily: "Cormorant Garamond, serif" }}
         >
           Bon retour parmi nous
         </p>
 
-        <div className="mb-4">
+        <div
+          className="p-3.5 mb-6 flex items-start gap-3"
+          style={{ background: "#EEE5D2", border: "1px solid rgba(138,109,58,0.25)", borderRadius: "2px" }}
+        >
+          <span className="shrink-0 mt-0.5"><PhoneIcon size={18} color="#8A6D3A" /></span>
+          <p className="font-sans text-xs text-muted-cream leading-relaxed">
+            <strong className="text-ink font-medium">Connexion rapide par SMS :</strong> saisissez simplement votre numéro de mobile. Un code OTP temporaire vous sera envoyé. Aucun mot de passe à saisir.
+          </p>
+        </div>
+
+        <div className="mb-6">
           <label className="block text-xs font-sans font-medium text-ink mb-1.5">
-            Email ou téléphone
+            Numéro de téléphone mobile
           </label>
           <input
-            type="text"
-            placeholder="vous@exemple.com"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
+            type="tel"
+            placeholder="+221 77 000 00 00"
+            value={mobile}
+            onChange={(e) => { setMobile(e.target.value); setError(""); }}
             className="w-full px-4 py-3 text-sm font-sans text-ink bg-white"
             style={inputStyle}
           />
+          <p className="text-[11px] font-sans text-muted-cream mt-1.5">
+            Exemple : +221 77 123 45 67 (Sénégal) ou +225 07 12 34 56 (Côte d&apos;Ivoire)
+          </p>
         </div>
 
-        <div className="mb-2">
-          <label className="block text-xs font-sans font-medium text-ink mb-1.5">Mot de passe</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={pwd}
-            onChange={(e) => setPwd(e.target.value)}
-            className="w-full px-4 py-3 text-sm font-sans text-ink bg-white"
-            style={inputStyle}
-          />
-        </div>
-
-        <button
-          className="text-xs text-gold underline mb-8 font-sans block"
-          onClick={() => go("forgot-password")}
-        >
-          Mot de passe oublié ?
-        </button>
+        {error && <p className="text-xs text-red-600 mb-4 font-sans">{error}</p>}
 
         <button
           className="w-full py-4 font-sans font-semibold text-sm text-black mb-4 transition-opacity hover:opacity-90"
           style={{ background: GOLD_GRAD, borderRadius: "2px" }}
-          onClick={() => go("dashboard")}
+          onClick={handleLogin}
         >
-          Se connecter
+          Recevoir mon code de connexion
+        </button>
+
+        <button
+          className="text-xs text-gold underline mb-8 font-sans block text-center w-full"
+          onClick={() => go("forgot-password")}
+        >
+          Besoin d&apos;aide ou code non reçu ?
         </button>
 
         <p className="text-center text-xs font-sans text-muted-cream">
           Pas encore de compte ?{" "}
-          <button className="text-gold underline" onClick={() => go("register")}>
-            S&apos;inscrire
+          <button className="text-gold underline font-medium" onClick={() => go("register")}>
+            S&apos;inscrire gratuitement
           </button>
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div
+        className="shrink-0 px-5 py-3"
+        style={{ background: "#1b1b1a", borderTop: `1px solid ${LINE_BLACK}` }}
+      >
+        <p className="text-xs font-sans text-muted-black text-center leading-relaxed flex items-center justify-center gap-2">
+          <LockIcon size={13} color="#B7AB92" />
+          Sécurité renforcée par validation mobile instantanée.
         </p>
       </div>
     </div>
   );
 }
 
-/* ─── FORGOT PASSWORD ───────────────────────────────────────── */
+/* ─── FORGOT PASSWORD (AIDE & ASSISTANCE OTP) ──────────────── */
 function ForgotPasswordScreen({ go }: { go: (s: Screen) => void }) {
-  const [step, setStep] = useState<"form" | "sent" | "reset">("form");
-  const [id, setId] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [sent, setSent] = useState(false);
 
   const inputStyle = {
     border: "1.5px solid rgba(138,109,58,0.28)",
     borderRadius: "2px",
     outline: "none",
   };
-
-  if (step === "sent")
-    return (
-      <div className="flex flex-col h-full bg-cream">
-        <div
-          className="flex items-center px-5 pt-12 pb-5 shrink-0"
-          style={{ borderBottom: "1px solid rgba(138,109,58,0.28)" }}
-        >
-          <button className="mr-4 text-ink text-xl" onClick={() => go("login")}>←</button>
-          <span className="font-serif text-ink text-xl font-bold" style={{ fontFamily: "Playfair Display, serif" }}>
-            Email envoyé
-          </span>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <div
-            className="w-16 h-16 flex items-center justify-center mb-6"
-            style={{ background: "rgba(184,151,90,0.12)", borderRadius: "50%" }}
-          >
-            <MailIcon size={28} color="#B8975A" />
-          </div>
-          <h2
-            className="text-ink font-bold text-2xl mb-3"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Vérifiez votre messagerie
-          </h2>
-          <p className="font-sans text-sm text-muted-cream leading-relaxed mb-8">
-            Un lien de réinitialisation a été envoyé à<br />
-            <strong className="text-ink">{id || "vous@exemple.com"}</strong>
-          </p>
-          <button
-            className="text-sm text-gold underline font-sans"
-            onClick={() => setStep("reset")}
-          >
-            Saisir un nouveau mot de passe →
-          </button>
-        </div>
-      </div>
-    );
-
-  if (step === "reset")
-    return (
-      <div className="flex flex-col h-full bg-cream overflow-y-auto">
-        <div
-          className="flex items-center px-5 pt-12 pb-5 shrink-0"
-          style={{ borderBottom: "1px solid rgba(138,109,58,0.28)" }}
-        >
-          <button className="mr-4 text-ink text-xl" onClick={() => setStep("sent")}>←</button>
-          <span className="font-serif text-ink text-xl font-bold" style={{ fontFamily: "Playfair Display, serif" }}>
-            Nouveau mot de passe
-          </span>
-        </div>
-        <div className="flex-1 px-5 pt-8">
-          <div className="mb-4">
-            <label className="block text-xs font-sans font-medium text-ink mb-1.5">Nouveau mot de passe</label>
-            <input type="password" placeholder="Au moins 8 caractères" className="w-full px-4 py-3 text-sm font-sans text-ink bg-white" style={inputStyle} />
-          </div>
-          <div className="mb-8">
-            <label className="block text-xs font-sans font-medium text-ink mb-1.5">Confirmer le mot de passe</label>
-            <input type="password" placeholder="Répétez le mot de passe" className="w-full px-4 py-3 text-sm font-sans text-ink bg-white" style={inputStyle} />
-          </div>
-          <button
-            className="w-full py-4 font-sans font-semibold text-sm text-black transition-opacity hover:opacity-90"
-            style={{ background: GOLD_GRAD, borderRadius: "2px" }}
-            onClick={() => go("login")}
-          >
-            Enregistrer le nouveau mot de passe
-          </button>
-        </div>
-      </div>
-    );
 
   return (
     <div className="flex flex-col h-full bg-cream overflow-y-auto">
@@ -615,30 +600,97 @@ function ForgotPasswordScreen({ go }: { go: (s: Screen) => void }) {
       >
         <button className="mr-4 text-ink text-xl" onClick={() => go("login")}>←</button>
         <span className="font-serif text-ink text-xl font-bold" style={{ fontFamily: "Playfair Display, serif" }}>
-          Mot de passe oublié
+          Assistance de connexion
         </span>
       </div>
+
       <div className="flex-1 px-5 pt-8">
-        <p className="font-sans text-sm text-muted-cream leading-relaxed mb-6">
-          Saisissez votre email ou numéro de téléphone. Nous vous enverrons un lien pour réinitialiser votre accès.
-        </p>
-        <div className="mb-8">
-          <label className="block text-xs font-sans font-medium text-ink mb-1.5">Email ou téléphone</label>
-          <input
-            type="text"
-            placeholder="vous@exemple.com"
-            value={id}
-            onChange={(e) => setId(e.target.value)}
-            className="w-full px-4 py-3 text-sm font-sans text-ink bg-white"
-            style={inputStyle}
-          />
+        <div className="flex items-center justify-center mb-5">
+          <div
+            className="w-14 h-14 flex items-center justify-center rounded-full"
+            style={{ background: "rgba(184,151,90,0.14)" }}
+          >
+            <HelpCircleIcon size={28} color="#8A6D3A" />
+          </div>
         </div>
-        <button
-          className="w-full py-4 font-sans font-semibold text-sm text-black transition-opacity hover:opacity-90"
-          style={{ background: GOLD_GRAD, borderRadius: "2px" }}
-          onClick={() => setStep("sent")}
+
+        <h2
+          className="text-ink font-bold text-lg text-center mb-2"
+          style={{ fontFamily: "Playfair Display, serif" }}
         >
-          Réinitialiser mon mot de passe
+          Problème d&apos;accès ou de code SMS ?
+        </h2>
+
+        <p className="font-sans text-xs text-muted-cream leading-relaxed text-center mb-6">
+          Philowona n&apos;utilise <strong>aucun mot de passe</strong> : l&apos;accès est 100% lié à votre numéro de mobile. Si vous ne recevez pas votre code SMS, plusieurs solutions existent :
+        </p>
+
+        <div className="flex flex-col gap-3 mb-6">
+          <div
+            className="p-3.5"
+            style={{ background: "#EEE5D2", border: "1px solid rgba(138,109,58,0.25)", borderRadius: "2px" }}
+          >
+            <p className="font-sans text-xs font-semibold text-ink mb-1">1. Vérifiez l&apos;indicatif pays</p>
+            <p className="font-sans text-xs text-muted-cream leading-relaxed">
+              Assurez-vous d&apos;avoir inclus l&apos;indicatif (+221, +225, +237, +33, etc.) sans le premier zéro de votre numéro local.
+            </p>
+          </div>
+
+          <div
+            className="p-3.5"
+            style={{ background: "#EEE5D2", border: "1px solid rgba(138,109,58,0.25)", borderRadius: "2px" }}
+          >
+            <p className="font-sans text-xs font-semibold text-ink mb-1">2. Demander un nouvel envoi</p>
+            <p className="font-sans text-xs text-muted-cream leading-relaxed">
+              Indiquez votre mobile ci-dessous pour renvoyer immédiatement un code OTP.
+            </p>
+          </div>
+        </div>
+
+        {sent ? (
+          <div
+            className="p-4 mb-6 text-center"
+            style={{ background: "rgba(184,151,90,0.15)", border: "1px solid #8A6D3A", borderRadius: "2px" }}
+          >
+            <p className="font-sans text-xs font-semibold text-ink mb-1">Nouveau code SMS demandé !</p>
+            <p className="font-sans text-xs text-muted-cream mb-3">Vérifiez vos SMS sur votre téléphone.</p>
+            <button
+              className="px-4 py-2 text-xs font-sans font-semibold text-black"
+              style={{ background: GOLD_GRAD, borderRadius: "2px" }}
+              onClick={() => go("otp")}
+            >
+              Aller à la saisie du code OTP →
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <label className="block text-xs font-sans font-medium text-ink mb-1.5">
+              Votre numéro de mobile
+            </label>
+            <input
+              type="tel"
+              placeholder="+221 77 000 00 00"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              className="w-full px-4 py-3 text-sm font-sans text-ink bg-white mb-3"
+              style={inputStyle}
+            />
+            <button
+              className="w-full py-3.5 font-sans font-semibold text-sm text-black transition-opacity hover:opacity-90"
+              style={{ background: GOLD_GRAD, borderRadius: "2px" }}
+              onClick={() => { setSent(true); }}
+            >
+              Renvoyer un nouveau code OTP
+            </button>
+          </div>
+        )}
+
+        <button
+          className="w-full py-3 font-sans text-sm font-medium text-ink"
+          style={{ border: "1px solid rgba(138,109,58,0.3)", borderRadius: "2px" }}
+          onClick={() => go("login")}
+        >
+          Retour à la page de connexion
         </button>
       </div>
     </div>
@@ -646,11 +698,16 @@ function ForgotPasswordScreen({ go }: { go: (s: Screen) => void }) {
 }
 
 /* ─── ROUTER ─────────────────────────────────────────────────── */
-export default function PublicScreens({ screen, go, setSelectedModuleId }: Props) {
+export default function PublicScreens({
+  screen,
+  go,
+  setSelectedModuleId,
+  setIsAuthenticated,
+}: Props) {
   switch (screen) {
     case "home": return <HomeScreen go={go} setSelectedModuleId={setSelectedModuleId} />;
     case "register": return <RegisterScreen go={go} />;
-    case "otp": return <OtpScreen go={go} />;
+    case "otp": return <OtpScreen go={go} setIsAuthenticated={setIsAuthenticated} />;
     case "login": return <LoginScreen go={go} />;
     case "forgot-password": return <ForgotPasswordScreen go={go} />;
     default: return null;

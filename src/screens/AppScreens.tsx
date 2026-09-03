@@ -14,6 +14,9 @@ import {
   SearchIcon,
   TrophyIcon,
   BookOpenIcon,
+  CheckIcon,
+  PlayIcon,
+  PauseIcon,
 } from "../icons";
 
 interface Props {
@@ -23,6 +26,8 @@ interface Props {
   setIsPremium: (v: boolean) => void;
   selectedModuleId: string;
   setSelectedModuleId: (id: string) => void;
+  isAuthenticated: boolean;
+  setIsAuthenticated: (v: boolean) => void;
 }
 
 const GOLD_GRAD = "linear-gradient(135deg, #8A6D3A, #B8975A, #D9C39C)";
@@ -124,6 +129,7 @@ function AppLayout({
   title,
   showBack,
   onBack,
+  isAuthenticated,
   children,
 }: {
   screen: Screen;
@@ -131,14 +137,21 @@ function AppLayout({
   title?: string;
   showBack?: boolean;
   onBack?: () => void;
+  isAuthenticated: boolean;
   children: React.ReactNode;
 }) {
   const noBottomNav = ["video-player", "quiz", "result", "payment", "payment-confirm", "premium", "module-detail"].includes(screen);
-  const navTabs = [
-    { id: "dashboard" as Screen, label: "Accueil", Icon: HomeIcon },
-    { id: "catalogue" as Screen, label: "Catalogue", Icon: GridIcon },
-    { id: "profile" as Screen, label: "Profil", Icon: PersonIcon },
-  ];
+  const navTabs = isAuthenticated
+    ? [
+        { id: "dashboard" as Screen, label: "Accueil", Icon: HomeIcon },
+        { id: "catalogue" as Screen, label: "Catalogue", Icon: GridIcon },
+        { id: "profile" as Screen, label: "Profil", Icon: PersonIcon },
+      ]
+    : [
+        { id: "home" as Screen, label: "Accueil", Icon: HomeIcon },
+        { id: "catalogue" as Screen, label: "Catalogue", Icon: GridIcon },
+        { id: "login" as Screen, label: "Connexion", Icon: PersonIcon },
+      ];
 
   return (
     <div className="flex flex-col h-full bg-cream">
@@ -148,18 +161,32 @@ function AppLayout({
         style={{ background: "#F6F1E7", borderBottom: `1px solid ${LINE_CREAM}` }}
       >
         {showBack ? (
-          <button className="text-ink text-xl mr-3" onClick={onBack ?? (() => go("dashboard"))}>←</button>
+          <button className="text-ink text-xl mr-3" onClick={onBack ?? (() => go(isAuthenticated ? "dashboard" : "home"))}>←</button>
         ) : (
-          <span className="font-serif font-bold text-base text-ink" style={{ fontFamily: "Playfair Display, serif" }}>
+          <button
+            className="font-serif font-bold text-base text-ink text-left"
+            style={{ fontFamily: "Playfair Display, serif" }}
+            onClick={() => go(isAuthenticated ? "dashboard" : "home")}
+          >
             Philowona
-          </span>
+          </button>
         )}
         {title && (
           <span className="font-sans font-semibold text-sm text-ink flex-1 text-center">{title}</span>
         )}
-        <button className="w-8 h-8 flex items-center justify-center">
-          <BellIcon />
-        </button>
+        {isAuthenticated ? (
+          <button className="w-8 h-8 flex items-center justify-center">
+            <BellIcon />
+          </button>
+        ) : (
+          <button
+            className="px-2.5 py-1 text-xs font-sans font-medium text-gold"
+            style={{ border: "1px solid #8A6D3A", borderRadius: "2px" }}
+            onClick={() => go("login")}
+          >
+            Connexion
+          </button>
+        )}
       </header>
 
       {/* Content */}
@@ -447,10 +474,12 @@ function ModuleDetailScreen({
   go,
   isPremium,
   moduleId,
+  isAuthenticated,
 }: {
   go: (s: Screen) => void;
   isPremium: boolean;
   moduleId: string;
+  isAuthenticated: boolean;
 }) {
   const m = modules.find((x) => x.id === moduleId) ?? modules[1];
   const locked = !m.free && !isPremium;
@@ -526,7 +555,7 @@ function ModuleDetailScreen({
         <div className="flex flex-col gap-2 mb-8">
           {["Comprendre les concepts fondamentaux", "Appliquer des méthodes concrètes", "Valider vos acquis par le quiz", "Obtenir votre certificat de complétion"].map((obj, i) => (
             <div key={i} className="flex items-start gap-3">
-              <span className="text-gold text-sm shrink-0 mt-0.5">✓</span>
+              <span className="shrink-0 mt-0.5"><CheckIcon size={14} color="#B8975A" /></span>
               <p className="font-sans text-sm text-ink">{obj}</p>
             </div>
           ))}
@@ -546,9 +575,9 @@ function ModuleDetailScreen({
             <button
               className="w-full py-4 font-sans font-semibold text-sm text-black"
               style={{ background: GOLD_GRAD, borderRadius: "2px" }}
-              onClick={() => go("premium")}
+              onClick={() => go(isAuthenticated ? "premium" : "register")}
             >
-              Passer Premium — 9 900 XOF / mois
+              {isAuthenticated ? "Passer Premium — 9 900 XOF / mois" : "Créer un compte pour s'abonner (SMS)"}
             </button>
           </div>
         ) : (
@@ -641,7 +670,13 @@ function VideoPlayerScreen({ go }: { go: (s: Screen) => void }) {
                 className="w-16 h-16 flex items-center justify-center rounded-full"
                 style={{ background: "rgba(184,151,90,0.85)" }}
               >
-                <span className="text-black text-2xl ml-1">{playing ? "⏸" : "▶"}</span>
+                {playing ? (
+                  <PauseIcon size={24} color="#141414" />
+                ) : (
+                  <div className="ml-1 flex items-center justify-center">
+                    <PlayIcon size={24} color="#141414" />
+                  </div>
+                )}
               </div>
               {playing && (
                 <div className="absolute bottom-3 left-3 right-3">
@@ -877,7 +912,13 @@ function QuizScreen({ go }: { go: (s: Screen) => void }) {
 }
 
 /* ─── RESULT + CERTIFICATE ──────────────────────────────────── */
-function ResultScreen({ go }: { go: (s: Screen) => void }) {
+function ResultScreen({
+  go,
+  isAuthenticated,
+}: {
+  go: (s: Screen) => void;
+  isAuthenticated?: boolean;
+}) {
   return (
     <div className="flex flex-col h-full bg-black overflow-y-auto">
       {/* Header */}
@@ -885,7 +926,7 @@ function ResultScreen({ go }: { go: (s: Screen) => void }) {
         className="flex items-center justify-between px-5 h-14 shrink-0"
         style={{ borderBottom: `1px solid ${LINE_BLACK}` }}
       >
-        <div className="w-8" />
+        <button className="text-cream text-xl" onClick={() => go("catalogue")}>←</button>
         <span
           className="font-serif font-bold text-cream"
           style={{ fontFamily: "Playfair Display, serif" }}
@@ -949,7 +990,7 @@ function ResultScreen({ go }: { go: (s: Screen) => void }) {
             className="text-cream font-bold text-xl mb-3"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Amadou Diallo
+            {isAuthenticated ? "Amadou Diallo" : "Visiteur (Apprenant)"}
           </p>
           <p className="font-sans text-xs text-muted-black mb-1">pour avoir complété</p>
           <p className="font-sans text-sm text-cream font-medium mb-4">
@@ -970,19 +1011,51 @@ function ResultScreen({ go }: { go: (s: Screen) => void }) {
           </div>
         </div>
 
-        <button
-          className="w-full py-4 font-sans font-semibold text-sm text-black mb-3"
-          style={{ background: GOLD_GRAD, borderRadius: "2px" }}
-        >
-          ↓ Télécharger le certificat (PDF)
-        </button>
-        <button
-          className="w-full py-3 font-sans text-sm font-medium text-cream"
-          style={{ border: "1px solid rgba(184,151,90,0.35)", borderRadius: "2px" }}
-          onClick={() => go("profile")}
-        >
-          Accéder à mon espace personnel
-        </button>
+        {!isAuthenticated ? (
+          <div className="w-full flex flex-col gap-3">
+            <div
+              className="p-4 text-center"
+              style={{ background: "rgba(184,151,90,0.1)", border: `1px solid ${LINE_BLACK}`, borderRadius: "2px" }}
+            >
+              <p className="font-sans text-xs text-gold-light font-medium mb-1">
+                Enregistrez votre certificat officiel
+              </p>
+              <p className="font-sans text-xs text-muted-black">
+                Créez votre compte gratuit par SMS pour inscrire votre nom sur ce certificat et le retrouver sur votre profil.
+              </p>
+            </div>
+            <button
+              className="w-full py-4 font-sans font-semibold text-sm text-black mb-1 transition-opacity hover:opacity-90"
+              style={{ background: GOLD_GRAD, borderRadius: "2px" }}
+              onClick={() => go("register")}
+            >
+              Créer mon compte gratuit (par SMS)
+            </button>
+            <button
+              className="w-full py-3 font-sans text-sm font-medium text-cream"
+              style={{ border: "1px solid rgba(184,151,90,0.35)", borderRadius: "2px" }}
+              onClick={() => go("catalogue")}
+            >
+              Retourner au catalogue
+            </button>
+          </div>
+        ) : (
+          <div className="w-full flex flex-col gap-3">
+            <button
+              className="w-full py-4 font-sans font-semibold text-sm text-black mb-1"
+              style={{ background: GOLD_GRAD, borderRadius: "2px" }}
+            >
+              ↓ Télécharger le certificat (PDF)
+            </button>
+            <button
+              className="w-full py-3 font-sans text-sm font-medium text-cream"
+              style={{ border: "1px solid rgba(184,151,90,0.35)", borderRadius: "2px" }}
+              onClick={() => go("profile")}
+            >
+              Accéder à mon espace personnel
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1021,10 +1094,10 @@ function ProfileScreen({
           <p className="font-sans text-xs text-muted-cream">Dakar, Sénégal · Français</p>
           {isPremium ? (
             <span
-              className="inline-flex items-center gap-1 text-xs font-sans font-semibold px-2 py-0.5 mt-1"
+              className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold px-2 py-0.5 mt-1"
               style={{ background: GOLD_GRAD, color: "#141414", borderRadius: "2px" }}
             >
-              ★ Premium
+              <StarIcon size={12} color="#141414" /> Premium
             </span>
           ) : (
             <span
@@ -1216,7 +1289,7 @@ function PremiumScreen({ go }: { go: (s: Screen) => void }) {
             "Support prioritaire",
           ].map((f, i) => (
             <div key={i} className="flex items-center gap-3 mb-3">
-              <span className="text-gold text-sm shrink-0">✓</span>
+              <span className="shrink-0"><CheckIcon size={14} color="#B8975A" /></span>
               <p className="font-sans text-cream text-sm">{f}</p>
             </div>
           ))}
@@ -1348,7 +1421,7 @@ function PaymentScreen({
               />
               <span className="font-sans text-sm font-medium text-ink">{op.name}</span>
               {operator === op.id && (
-                <span className="ml-auto text-gold text-lg">✓</span>
+                <span className="ml-auto flex items-center"><CheckIcon size={18} color="#B8975A" /></span>
               )}
             </button>
           ))}
@@ -1461,6 +1534,8 @@ export default function AppScreens({
   setIsPremium,
   selectedModuleId,
   setSelectedModuleId,
+  isAuthenticated,
+  setIsAuthenticated: _setIsAuthenticated,
 }: Props) {
   const noLayout = ["video-player", "quiz", "result", "payment", "payment-confirm", "premium"].includes(screen);
 
@@ -1471,13 +1546,13 @@ export default function AppScreens({
       case "catalogue":
         return <CatalogueScreen go={go} isPremium={isPremium} setSelectedModuleId={setSelectedModuleId} />;
       case "module-detail":
-        return <ModuleDetailScreen go={go} isPremium={isPremium} moduleId={selectedModuleId} />;
+        return <ModuleDetailScreen go={go} isPremium={isPremium} moduleId={selectedModuleId} isAuthenticated={isAuthenticated} />;
       case "video-player":
         return <VideoPlayerScreen go={go} />;
       case "quiz":
         return <QuizScreen go={go} />;
       case "result":
-        return <ResultScreen go={go} />;
+        return <ResultScreen go={go} isAuthenticated={isAuthenticated} />;
       case "profile":
         return <ProfileScreen go={go} isPremium={isPremium} />;
       case "premium":
@@ -1496,7 +1571,7 @@ export default function AppScreens({
   }
 
   return (
-    <AppLayout screen={screen} go={go}>
+    <AppLayout screen={screen} go={go} isAuthenticated={isAuthenticated}>
       {content}
     </AppLayout>
   );

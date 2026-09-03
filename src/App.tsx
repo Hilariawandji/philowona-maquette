@@ -44,6 +44,7 @@ const ADMIN: Screen[] = [
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState("2");
 
@@ -62,7 +63,12 @@ export default function App() {
         }}
       >
         {isPublic && (
-          <PublicScreens screen={screen} go={go} setSelectedModuleId={setSelectedModuleId} />
+          <PublicScreens
+            screen={screen}
+            go={go}
+            setSelectedModuleId={setSelectedModuleId}
+            setIsAuthenticated={setIsAuthenticated}
+          />
         )}
         {!isPublic && !isAdmin && (
           <AppScreens
@@ -72,6 +78,8 @@ export default function App() {
             setIsPremium={setIsPremium}
             selectedModuleId={selectedModuleId}
             setSelectedModuleId={setSelectedModuleId}
+            isAuthenticated={isAuthenticated}
+            setIsAuthenticated={setIsAuthenticated}
           />
         )}
         {isAdmin && <AdminScreens screen={screen} go={go} />}
